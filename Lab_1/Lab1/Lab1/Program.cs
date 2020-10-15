@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
+
 namespace Lab1
 {
     class Program
@@ -15,7 +16,7 @@ namespace Lab1
 
         private MySqlConnection _connection;
 
-        private readonly static string[] _tables = { "students", "subjects", "teachers", "students_subjects" };
+        private readonly static string[] _tables = { "students", "subjects", "teachers", "exams" };
 
 
         public void ReadAll()
@@ -30,7 +31,28 @@ namespace Lab1
 
         public void DownAll()
         {
-            MakeForAllTables(DownTable);
+            try
+            {
+                _connection.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+            using (MySqlCommand query = _connection.CreateCommand())
+            {
+                var list = new List<string>(_tables);
+                list.Reverse();
+
+                foreach (var table in list)
+                {
+                    DownTable(table, query);
+                }
+            }
+
+            _connection.Close();
         }
 
         private void MakeConnection()
@@ -101,6 +123,44 @@ namespace Lab1
             }
         }
 
+        private void ShowTable()
+        {
+            try
+            {
+                _connection.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+            using (MySqlCommand query = _connection.CreateCommand())
+            {
+                query.CommandText = 
+                    $"SELECT st.student_surname, st.student_name, sb.subject_name, sb.subject_date, t.teacher_surname, t.teacher_name " +
+                    $"FROM exams e " +
+                    $"JOIN students st ON e.student_id = st.student_id " +
+                    $"JOIN teachers t ON e.teacher_id = t.teacher_id " +
+                    $"JOIN subjects sb ON e.subject_id = sb.subject_id";
+
+                var reader = query.ExecuteReader();
+                while (reader.Read())
+                {
+                    object[] objects = new object[reader.FieldCount];
+                    reader.GetValues(objects);
+
+                    string result = "| ";
+                    foreach (object ob in objects)
+                    {
+                        result += ob.ToString() +" | ";
+                    }
+                    Console.WriteLine(result);
+                }
+
+            }
+        }
+
         private void UpTable(string table, MySqlCommand query)
         {
             MySqlDataReader reader = default;
@@ -139,7 +199,7 @@ namespace Lab1
             MySqlDataReader reader = default;
             try
             {
-                query.CommandText = $"TRUNCATE TABLE {table}";
+                query.CommandText = $"DELETE FROM {table}";
                 reader = query.ExecuteReader();
             }
             catch (Exception ex)
@@ -151,8 +211,6 @@ namespace Lab1
                 reader?.Close();
             }
         }
-
-
 
         private IEnumerable<string[]> ReadFromFile(string filepath)
         {
@@ -176,6 +234,7 @@ namespace Lab1
 
             reader.Close();
         }
+
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -184,7 +243,7 @@ namespace Lab1
             program.DownAll();
             program.UpAll();
             program.ReadAll();
-            
+            program.ShowTable();
             Console.ReadLine();
         }
     }
