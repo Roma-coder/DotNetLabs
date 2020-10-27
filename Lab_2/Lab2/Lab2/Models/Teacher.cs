@@ -25,5 +25,10 @@ namespace Lab2.Models
             FirstName = values[2];
             MiddleName = values[3];
         }
+
+        public override string ToString()
+        {
+            return $"Teacher({LastName} {FirstName} {MiddleName})";
+        }
     }
 }

@@ -25,5 +25,10 @@ namespace Lab2.Models
         public Teacher Teacher { get; set; }
 
         public int Mark { get; set; }
+
+        public override string ToString()
+        {
+            return $"Exam({Subject}, {Teacher})";
+        }
     }
 }

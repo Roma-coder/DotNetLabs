@@ -22,5 +22,10 @@ namespace Lab2.Models
             Name = values[1];
             Date = DateTime.Parse(values[2]);
         }
+
+        public override string ToString()
+        {
+            return $"Subject(Name: {Name}, Date: {Date.ToShortDateString()})";
+        }
     }
 }

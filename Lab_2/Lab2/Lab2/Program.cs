@@ -55,6 +55,42 @@ namespace Lab2
 
         private static void PrintData(ApplicationContext context)
         {
+            var data = context.Students
+                .GroupJoin(context.Exams,
+                    student => student.Id,
+                    exam => exam.StudentId,
+                    (x, y) => new { Student = x, Exams = y })
+                .SelectMany(xy => xy.Exams.DefaultIfEmpty(), (x, y) => new { x.Student, Exam = y })
+                .ToList()
+                .GroupBy(s => s.Student);
+
+            Console.WriteLine("-------------------------- All Students --------------------------");
+            foreach (var el in data)
+            {
+                var exams = el.Select(x => x.Exam?.ToString());
+
+                var examsStr = string.Empty;
+                foreach (var exam in exams)
+                {
+                    examsStr += exam != null ? $"{exam}, " : "";
+                }
+
+                if (examsStr.Length > 2)
+                {
+                    examsStr = examsStr.Substring(0, examsStr.Length - 2);
+                }
+                else
+                {
+                    examsStr = "Does not have an exams!";
+                }
+
+                Console.WriteLine($"Student {el.Key.FirstName} {el.Key.LastName} - {examsStr}");
+            }
+            Console.WriteLine("\n");
+        }
+
+        private static void PrintDataFromAggregation(ApplicationContext context)
+        {
             var data = context.Exams
                 .Join(context.Students, o => o.StudentId, c => c.Id,
                     (o, c) => new { SubjectId = o.SubjectId, TeacherId = o.TeacherId, SFirstName = c.FirstName, SLastName = c.LastName })
@@ -66,6 +102,7 @@ namespace Lab2
                 .GroupBy(t => new { t.SFirstName, t.SLastName })
                 .Where(g => g.Count() >= 2);
 
+            Console.WriteLine("-------------------------- Aggregated Data --------------------------");
             foreach (var el in data)
             {
                 string[] subjects = el.Select(q => q.Subject).ToArray();
@@ -92,6 +129,8 @@ namespace Lab2
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             using (var context = new ApplicationContext())
             {
+                DeleteData(context);
+
                 var students = Enumerable.Cast<Student>(ImportData(context, typeof(Student), "students"));
                 var subjects = Enumerable.Cast<Subject>(ImportData(context, typeof(Subject), "subjects"));
                 var teachers = Enumerable.Cast<Teacher>(ImportData(context, typeof(Teacher), "teachers"));
@@ -99,7 +138,7 @@ namespace Lab2
                 ImportExams(context, students, subjects, teachers);
 
                 PrintData(context);
-                DeleteData(context);
+                PrintDataFromAggregation(context);                
             }
         }
     }
