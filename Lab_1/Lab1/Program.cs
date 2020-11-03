@@ -123,42 +123,6 @@ namespace Lab1
             }
         }
 
-        private void PrintData()
-        {
-            try
-            {
-                _connection.Open();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
-            }
-
-            using (MySqlCommand query = _connection.CreateCommand())
-            {
-                query.CommandText =
-                    $"SELECT st.student_surname, st.student_name, COUNT(sb.subject_id)" +
-                    $"FROM exams e " +
-                    $"JOIN students st ON e.student_id = st.student_id " +
-                    $"JOIN teachers t ON e.teacher_id = t.teacher_id " +
-                    $"JOIN subjects sb ON e.subject_id = sb.subject_id " + 
-                    $"GROUP BY st.student_id";
-
-                var reader = query.ExecuteReader();
-                while (reader.Read())
-                {
-                    object[] objects = new object[reader.FieldCount];
-                    reader.GetValues(objects);
-
-                    Console.WriteLine($"Student {objects[0]} {objects[1]} {objects[2]} - has passed {objects[3]} exams");
-                }
-
-            }
-
-            _connection.Close();
-        }
-
         private void ShowTable()
         {
             try
@@ -195,8 +159,6 @@ namespace Lab1
                 }
 
             }
-
-            _connection.Close();
         }
 
         private void UpTable(string table, MySqlCommand query)
@@ -282,7 +244,6 @@ namespace Lab1
             program.UpAll();
             program.ReadAll();
             program.ShowTable();
-            program.PrintData();
             Console.ReadLine();
         }
     }

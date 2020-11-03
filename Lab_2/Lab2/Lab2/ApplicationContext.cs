@@ -1,8 +1,12 @@
 ﻿using Lab2.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Lab2
 {
@@ -13,10 +17,7 @@ namespace Lab2
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<Exam> Exams { get; set; }
 
-        const string Host = "localhost";
-        const string Db = "student_perfomance_2";
-        const string User = "root";
-        const string Password = "";
+        private readonly string ConfigurationPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
 
         public ApplicationContext()
         {
@@ -25,7 +26,9 @@ namespace Lab2
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySql($"Database={Db};Datasource={Host};User={User};Password={Password}");
+            string configurationJson = File.ReadAllText(ConfigurationPath);
+            Dictionary<string, Dictionary<string, string>> configuration = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(configurationJson);
+            optionsBuilder.UseMySql(configuration["ConnectionStrings"]["DefaultConnection"]);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
