@@ -61,13 +61,13 @@ namespace Lab2
                     exam => exam.StudentId,
                     (x, y) => new { Student = x, Exams = y })
                 .SelectMany(xy => xy.Exams.DefaultIfEmpty(), (x, y) => new { x.Student, Exam = y })
-                .ToList()
-                .GroupBy(s => s.Student);
+                .GroupBy(s => s.Student)
+                .ToDictionary(e => e.Key, e => e.Select(x => x.Exam?.ToString()));
 
             Console.WriteLine("-------------------------- All Students --------------------------");
             foreach (var el in data)
             {
-                var exams = el.Select(x => x.Exam?.ToString());
+                string[] exams = el.Value;
 
                 var examsStr = string.Empty;
                 foreach (var exam in exams)
@@ -97,16 +97,17 @@ namespace Lab2
                 .Join(context.Subjects, oc => oc.SubjectId, p => p.Id,
                     (oc, p) => new { Subject = p.Name, TeacherId = oc.TeacherId, SFirstName = oc.SFirstName, SLastName = oc.SLastName })
                 .Join(context.Teachers, oc => oc.TeacherId, p => p.Id,
-                    (oc, p) => new { Subject = oc.Subject, TFirstName = p.FirstName, TLastName = p.LastName, SFirstName = oc.SFirstName, SLastName = oc.SLastName })
-                .ToList()
+                    (oc, p) => new { Subject = oc.Subject, Teacher = p, SFirstName = oc.SFirstName, SLastName = oc.SLastName })
                 .GroupBy(t => new { t.SFirstName, t.SLastName })
-                .Where(g => g.Count() >= 2);
+                .Where(g => g.Count() >= 2)
+                .Select(e => new { e.Key, Count = e.Count(), Subjects = e.Select(e => e.Subject).ToArray(), Teachers = e.Select(e => e.Teacher.FirstName + " " + e.Teacher.LastName).ToArray() })
+                .ToDictionary(e => e.Key, e => new object[] { e.Subjects, e.Teachers });
 
             Console.WriteLine("-------------------------- Aggregated Data --------------------------");
             foreach (var el in data)
             {
-                string[] subjects = el.Select(q => q.Subject).ToArray();
-                string[] teachers = el.Select(q => q.TLastName + " " + q.TFirstName).ToArray();
+                string[] subjects = (string[])el.Value[0];
+                string[] teachers = (string[])el.Value[1];
 
                 Console.WriteLine($"'{el.Key.SFirstName} {el.Key.SLastName}' " +
                     $"| Subjects [{string.Join(", ", subjects)}] " +
